@@ -14,10 +14,10 @@
 #include <WiFi.h>
 #include <ArtnetWifi.h>
 #include "Arrow.h"
-#include "secrets.h"  // local variables
+#include "secrets.h" // local variables
 
 // How many leds in your strip?
-#define NUM_LEDS 452  // 452 LEDs in Arrow
+#define NUM_LEDS 452 // 452 LEDs in Arrow
 // #define NUM_LEDS 515 // 515 LEDs in Laser v2 + Scissors
 // #define NUM_LEDS 507  // 507 LEDs in Circle
 
@@ -35,10 +35,10 @@ CRGB leds[NUM_LEDS];
 
 uint16_t numPx = 8;
 
-// REPLACE WITH THE MAC Address of your receiver 
+// REPLACE WITH THE MAC Address of your receiver
 // uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 // uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC};  // AP
-uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC};  // C1
+uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
 
 // Artnet
 ArtnetWifi artnet;
@@ -62,17 +62,20 @@ uint8_t incomingColB;
 // Variable to store if sending data was successful
 String success;
 
-//Structure example to send data
-//Must match the receiver structure
-typedef struct struct_message {
-    uint16_t ledNum;
-    uint8_t colR;
-    uint8_t colG;
-    uint8_t colB;
+// Structure example to send data
+// Must match the receiver structure
+typedef struct struct_message
+{
+  uint16_t ledNum;
+  uint8_t colR;
+  uint8_t colG;
+  uint8_t colB;
 } struct_message;
 
 // Create a struct_message for dummy data
 struct_message DummyData;
+// Create a struct_message for Artnet data
+struct_message artnetData;
 // Create a struct_message to hold incoming data
 struct_message incomingReadings;
 
@@ -91,22 +94,27 @@ boolean connectWifi(void)
 
   // Wait for connection
   Serial.print("Connecting");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
-    if (i > 20){
+    if (i > 20)
+    {
       state = false;
       break;
     }
     i++;
   }
-  if (state){
+  if (state)
+  {
     Serial.println("");
     Serial.print("Connected to ");
     Serial.println(ssid);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-  } else {
+  }
+  else
+  {
     Serial.println("");
     Serial.println("Connection failed.");
   }
@@ -114,20 +122,24 @@ boolean connectWifi(void)
   return state;
 }
 
-// Callback when data is sent
-void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+// Callback when data is sent (ESP_NOW)
+void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
   Serial.print("Last Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  if (status ==0){
+  if (status == 0)
+  {
     success = "Delivery Success :)";
   }
-  else{
+  else
+  {
     success = "Delivery Fail :(";
   }
 }
 
-// Callback when data is received
-void onDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+// Callback when data is received (ESP_NOW)
+void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
   Serial.printf("Bytes received:\t[%i]\n", len);
   incomingLedNum = incomingReadings.ledNum;
@@ -137,188 +149,188 @@ void onDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
 }
 
-void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data)
+// Callback when data is received (DMX)
+void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data)
 {
-  Serial.println("_");
-  Serial.println(printf("onDmxFrame #%u uni%u l%u seq%u", frameNo, universe, length, sequence));
-  sendFrame = 1;
+  printf("onDmxFrame #%u uni%u l%u seq%u\n", frameNo, universe, length, sequence);
 
-  // // set brightness of the whole strip 
+  // sendFrame = 1;
+
+  // // set brightness of the whole strip
   // if (universe == 15)
   // {
   //   FastLED.setBrightness(data[0]);
   // }
-  // // read universe and put into the right part of the display buffer
-  // // using length/3 because 3 values define r/g/b of one pixel
-  // for (int i = 0; i < length / 3; i++)
-  // {
-  //   int led = i + (universe - startUniverse) * (previousDataLength / 3);
+  // read universe and put into the right part of the display buffer
+  // using length/3 because 3 values define r/g/b of one pixel
+  for (int i = 0; i < length / 3; i++)
+  {
+    int led = i + (universe - startUniverse) * (previousDataLength / 3);
 
-  //   if (led < numPx)
-  //   {
-  //     int16_t thisCount = 0;
-  //     const int16_t *thisRegion;
+    //   if (led < numPx)
+    //   {
+    //     int16_t thisCount = 0;
+    //     const int16_t *thisRegion;
 
-  //     switch (led)
-  //     {
-  //       // row 1
-  //       case 10:
-  //           thisCount = len_p11_1;
-  //           thisRegion = p11_1;
-  //           break;
-  //       case 11:
-  //           thisCount = len_p12_1;
-  //           thisRegion = p12_1;
-  //           break;
-  //       case 12:
-  //           thisCount = len_p13_1;
-  //           thisRegion = p13_1;
-  //           break;
-  //       case 13:
-  //           thisCount = len_p14_1;
-  //           thisRegion = p14_1;
-  //           break;
-  //       case 14:
-  //           thisCount = len_p15_1;
-  //           thisRegion = p15_1;
-  //           break;
+    //     switch (led)
+    //     {
+    //       // row 1
+    //       case 10:
+    //           thisCount = len_p11_1;
+    //           thisRegion = p11_1;
+    //           break;
+    //       case 11:
+    //           thisCount = len_p12_1;
+    //           thisRegion = p12_1;
+    //           break;
+    //       case 12:
+    //           thisCount = len_p13_1;
+    //           thisRegion = p13_1;
+    //           break;
+    //       case 13:
+    //           thisCount = len_p14_1;
+    //           thisRegion = p14_1;
+    //           break;
+    //       case 14:
+    //           thisCount = len_p15_1;
+    //           thisRegion = p15_1;
+    //           break;
 
-  //       // row 2
-  //       case 23:
-  //           thisCount = len_p14_2;
-  //           thisRegion = p14_2;
-  //           break;
-  //       case 24:
-  //           thisCount = len_p15_2;
-  //           thisRegion = p15_2;
-  //           break;
-  //       case 25:
-  //           thisCount = len_p16_2;
-  //           thisRegion = p16_2;
-  //           break;
+    //       // row 2
+    //       case 23:
+    //           thisCount = len_p14_2;
+    //           thisRegion = p14_2;
+    //           break;
+    //       case 24:
+    //           thisCount = len_p15_2;
+    //           thisRegion = p15_2;
+    //           break;
+    //       case 25:
+    //           thisCount = len_p16_2;
+    //           thisRegion = p16_2;
+    //           break;
 
-  //       // row 3
-  //       case 35:
-  //           thisCount = len_p16_3;
-  //           thisRegion = p16_3;
-  //           break;
-  //       case 36:
-  //           thisCount = len_p17_3;
-  //           thisRegion = p17_3;
-  //           break;
-  //       case 37:
-  //           thisCount = len_p18_3;
-  //           thisRegion = p18_3;
-  //           break;
+    //       // row 3
+    //       case 35:
+    //           thisCount = len_p16_3;
+    //           thisRegion = p16_3;
+    //           break;
+    //       case 36:
+    //           thisCount = len_p17_3;
+    //           thisRegion = p17_3;
+    //           break;
+    //       case 37:
+    //           thisCount = len_p18_3;
+    //           thisRegion = p18_3;
+    //           break;
 
-  //       // row 4
-  //       case 46:
-  //           thisCount = len_p17_4;
-  //           thisRegion = p17_4;
-  //           break;
-  //       case 47:
-  //           thisCount = len_p18_4;
-  //           thisRegion = p18_4;
-  //           break;
-  //       case 48:
-  //           thisCount = len_p19_4;
-  //           thisRegion = p19_4;
-  //           break;
+    //       // row 4
+    //       case 46:
+    //           thisCount = len_p17_4;
+    //           thisRegion = p17_4;
+    //           break;
+    //       case 47:
+    //           thisCount = len_p18_4;
+    //           thisRegion = p18_4;
+    //           break;
+    //       case 48:
+    //           thisCount = len_p19_4;
+    //           thisRegion = p19_4;
+    //           break;
 
-  //       // row 5
-  //       case 58:
-  //           thisCount = len_p19_5;
-  //           thisRegion = p19_5;
-  //           break;
-  //       case 59:
-  //           thisCount = len_p20_5;
-  //           thisRegion = p20_5;
-  //           break;
-  //       case 60:
-  //           thisCount = len_p21_5;
-  //           thisRegion = p21_5;
-  //           break;
+    //       // row 5
+    //       case 58:
+    //           thisCount = len_p19_5;
+    //           thisRegion = p19_5;
+    //           break;
+    //       case 59:
+    //           thisCount = len_p20_5;
+    //           thisRegion = p20_5;
+    //           break;
+    //       case 60:
+    //           thisCount = len_p21_5;
+    //           thisRegion = p21_5;
+    //           break;
 
-  //       // row 6
-  //       case 69:
-  //           thisCount = len_p20_6;
-  //           thisRegion = p20_6;
-  //           break;
-  //       case 70:
-  //           thisCount = len_p21_6;
-  //           thisRegion = p21_6;
-  //           break;
-  //     }
+    //       // row 6
+    //       case 69:
+    //           thisCount = len_p20_6;
+    //           thisRegion = p20_6;
+    //           break;
+    //       case 70:
+    //           thisCount = len_p21_6;
+    //           thisRegion = p21_6;
+    //           break;
+    //     }
 
-  //     for(int l=0; l<thisCount; l++) {
-  //       leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
-  //     }
-  //   }
-  // }
-  // previousDataLength = length;     
+    //     for(int l=0; l<thisCount; l++) {
+    //       leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+    //     }
+    //   }
+
+    // generateDummyData();
+    artnetData.ledNum = ledNum;
+    artnetData.colR = data[i * 3];
+    artnetData.colG = data[i * 3 + 1];
+    artnetData.colB = data[i * 3 + 2];
+    Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
+
+    // Send message via ESP-NOW
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+
+    if (result == ESP_OK)
+    {
+      Serial.println("Sent with success");
+    }
+    else
+    {
+      Serial.println("Error sending the data");
+    }
+  }
+
+  // previousDataLength = length;
   // FastLED.show();
   // frameNo ++;
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   connectWifi();
 
   // init LEDs
-	FastLED.addLeds<WS2813, DATA_PIN, GRB>(leds, NUM_LEDS);
-	FastLED.setBrightness(100);
+  FastLED.addLeds<WS2813, DATA_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(100);
 
   // onDmxFrame will execute every time a packet is received by the ESP32
   artnet.begin();
   artnet.setArtDmxCallback(onDmxFrame);
 
   // Init ESP-NOW
-  if (esp_now_init() != ESP_OK) {
+  if (esp_now_init() != ESP_OK)
+  {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
   // register for sending CB to get the status of transmitted packet
   esp_now_register_send_cb(onDataSent);
-  
+
   // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;  
+  peerInfo.channel = 0;
   peerInfo.encrypt = false;
-  
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+
+  // Add peer
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
     Serial.println("Failed to add peer");
     return;
   }
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(onDataRecv);
 }
- 
-void loop() {
-  // generateDummyData();
-  // DummyData.ledNum = ledNum;
-  // DummyData.colR = colR;
-  // DummyData.colG = colG;
-  // DummyData.colB = colB;
 
-  // // Send message via ESP-NOW
-  // esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &DummyData, sizeof(DummyData));
-   
-  // if (result == ESP_OK) {
-  //   Serial.println("Sent with success");
-  // }
-  // else {
-  //   Serial.println("Error sending the data");
-  // }
-  // delay(3000);
-
+void loop()
+{
   artnet.read();
 }
-
-// void generateDummyData(){
-//   ledNum = random(500);
-//   colR = random(255);
-//   colG = random(255);
-//   colB = random(255);
-//   Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, colR, colG, colB);
-// }
