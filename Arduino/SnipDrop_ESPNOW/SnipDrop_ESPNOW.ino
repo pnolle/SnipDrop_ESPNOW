@@ -161,132 +161,135 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   // {
   //   FastLED.setBrightness(data[0]);
   // }
-  // read universe and put into the right part of the display buffer
-  // using length/3 because 3 values define r/g/b of one pixel
-  for (int i = 0; i < length / 3; i++)
-  {
-    int led = i + (universe - startUniverse) * (previousDataLength / 3);
 
-    //   if (led < numPx)
-    //   {
-    //     int16_t thisCount = 0;
-    //     const int16_t *thisRegion;
 
-    //     switch (led)
-    //     {
-    //       // row 1
-    //       case 10:
-    //           thisCount = len_p11_1;
-    //           thisRegion = p11_1;
-    //           break;
-    //       case 11:
-    //           thisCount = len_p12_1;
-    //           thisRegion = p12_1;
-    //           break;
-    //       case 12:
-    //           thisCount = len_p13_1;
-    //           thisRegion = p13_1;
-    //           break;
-    //       case 13:
-    //           thisCount = len_p14_1;
-    //           thisRegion = p14_1;
-    //           break;
-    //       case 14:
-    //           thisCount = len_p15_1;
-    //           thisRegion = p15_1;
-    //           break;
+  // // read universe and put into the right part of the display buffer
+  // // using length/3 because 3 values define r/g/b of one pixel
+  // for (int i = 0; i < length / 3; i++)
+  // {
+  //   int led = i + (universe - startUniverse) * (previousDataLength / 3);
 
-    //       // row 2
-    //       case 23:
-    //           thisCount = len_p14_2;
-    //           thisRegion = p14_2;
-    //           break;
-    //       case 24:
-    //           thisCount = len_p15_2;
-    //           thisRegion = p15_2;
-    //           break;
-    //       case 25:
-    //           thisCount = len_p16_2;
-    //           thisRegion = p16_2;
-    //           break;
+  //   //   if (led < numPx)
+  //   //   {
+  //   //     int16_t thisCount = 0;
+  //   //     const int16_t *thisRegion;
 
-    //       // row 3
-    //       case 35:
-    //           thisCount = len_p16_3;
-    //           thisRegion = p16_3;
-    //           break;
-    //       case 36:
-    //           thisCount = len_p17_3;
-    //           thisRegion = p17_3;
-    //           break;
-    //       case 37:
-    //           thisCount = len_p18_3;
-    //           thisRegion = p18_3;
-    //           break;
+  //   //     switch (led)
+  //   //     {
+  //   //       // row 1
+  //   //       case 10:
+  //   //           thisCount = len_p11_1;
+  //   //           thisRegion = p11_1;
+  //   //           break;
+  //   //       case 11:
+  //   //           thisCount = len_p12_1;
+  //   //           thisRegion = p12_1;
+  //   //           break;
+  //   //       case 12:
+  //   //           thisCount = len_p13_1;
+  //   //           thisRegion = p13_1;
+  //   //           break;
+  //   //       case 13:
+  //   //           thisCount = len_p14_1;
+  //   //           thisRegion = p14_1;
+  //   //           break;
+  //   //       case 14:
+  //   //           thisCount = len_p15_1;
+  //   //           thisRegion = p15_1;
+  //   //           break;
 
-    //       // row 4
-    //       case 46:
-    //           thisCount = len_p17_4;
-    //           thisRegion = p17_4;
-    //           break;
-    //       case 47:
-    //           thisCount = len_p18_4;
-    //           thisRegion = p18_4;
-    //           break;
-    //       case 48:
-    //           thisCount = len_p19_4;
-    //           thisRegion = p19_4;
-    //           break;
+  //   //       // row 2
+  //   //       case 23:
+  //   //           thisCount = len_p14_2;
+  //   //           thisRegion = p14_2;
+  //   //           break;
+  //   //       case 24:
+  //   //           thisCount = len_p15_2;
+  //   //           thisRegion = p15_2;
+  //   //           break;
+  //   //       case 25:
+  //   //           thisCount = len_p16_2;
+  //   //           thisRegion = p16_2;
+  //   //           break;
 
-    //       // row 5
-    //       case 58:
-    //           thisCount = len_p19_5;
-    //           thisRegion = p19_5;
-    //           break;
-    //       case 59:
-    //           thisCount = len_p20_5;
-    //           thisRegion = p20_5;
-    //           break;
-    //       case 60:
-    //           thisCount = len_p21_5;
-    //           thisRegion = p21_5;
-    //           break;
+  //   //       // row 3
+  //   //       case 35:
+  //   //           thisCount = len_p16_3;
+  //   //           thisRegion = p16_3;
+  //   //           break;
+  //   //       case 36:
+  //   //           thisCount = len_p17_3;
+  //   //           thisRegion = p17_3;
+  //   //           break;
+  //   //       case 37:
+  //   //           thisCount = len_p18_3;
+  //   //           thisRegion = p18_3;
+  //   //           break;
 
-    //       // row 6
-    //       case 69:
-    //           thisCount = len_p20_6;
-    //           thisRegion = p20_6;
-    //           break;
-    //       case 70:
-    //           thisCount = len_p21_6;
-    //           thisRegion = p21_6;
-    //           break;
-    //     }
+  //   //       // row 4
+  //   //       case 46:
+  //   //           thisCount = len_p17_4;
+  //   //           thisRegion = p17_4;
+  //   //           break;
+  //   //       case 47:
+  //   //           thisCount = len_p18_4;
+  //   //           thisRegion = p18_4;
+  //   //           break;
+  //   //       case 48:
+  //   //           thisCount = len_p19_4;
+  //   //           thisRegion = p19_4;
+  //   //           break;
 
-    //     for(int l=0; l<thisCount; l++) {
-    //       leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
-    //     }
-    //   }
+  //   //       // row 5
+  //   //       case 58:
+  //   //           thisCount = len_p19_5;
+  //   //           thisRegion = p19_5;
+  //   //           break;
+  //   //       case 59:
+  //   //           thisCount = len_p20_5;
+  //   //           thisRegion = p20_5;
+  //   //           break;
+  //   //       case 60:
+  //   //           thisCount = len_p21_5;
+  //   //           thisRegion = p21_5;
+  //   //           break;
 
-    // generateDummyData();
-    artnetData.ledNum = ledNum;
-    artnetData.colR = data[i * 3];
-    artnetData.colG = data[i * 3 + 1];
-    artnetData.colB = data[i * 3 + 2];
-    Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
+  //   //       // row 6
+  //   //       case 69:
+  //   //           thisCount = len_p20_6;
+  //   //           thisRegion = p20_6;
+  //   //           break;
+  //   //       case 70:
+  //   //           thisCount = len_p21_6;
+  //   //           thisRegion = p21_6;
+  //   //           break;
+  //   //     }
 
-    // Send message via ESP-NOW
-    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+  //   //     for(int l=0; l<thisCount; l++) {
+  //   //       leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+  //   //     }
+  //   //   }
 
-    if (result == ESP_OK)
-    {
-      Serial.println("Sent with success");
-    }
-    else
-    {
-      Serial.println("Error sending the data");
-    }
-  }
+  //   // generateDummyData();
+  //   artnetData.ledNum = ledNum;
+  //   artnetData.colR = data[i * 3];
+  //   artnetData.colG = data[i * 3 + 1];
+  //   artnetData.colB = data[i * 3 + 2];
+  //   Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+  //   // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
+
+  //   // Send message via ESP-NOW
+  //   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+
+  //   if (result == ESP_OK)
+  //   {
+  //     Serial.println("Sent with success");
+  //   }
+  //   else
+  //   {
+  //     Serial.println("Error sending the data");
+  //   }
+  // }
 
   // previousDataLength = length;
   // FastLED.show();
