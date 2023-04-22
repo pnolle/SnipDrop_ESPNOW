@@ -14,6 +14,7 @@
 #include <WiFi.h>
 #include <ArtnetWifi.h>
 #include "Arrow.h"
+#include "dummypixels.h"
 #include "secrets.h" // local variables
 
 // How many leds in your strip?
@@ -33,8 +34,6 @@
 // Define the array of leds
 CRGB leds[NUM_LEDS];
 
-uint16_t numPx = 8;
-
 // REPLACE WITH THE MAC Address of your receiver
 // uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 // uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC};  // AP
@@ -44,7 +43,7 @@ uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
 ArtnetWifi artnet;
 const int startUniverse = 0;
 bool sendFrame = 1;
-int previousDataLength = 0;
+uint16_t previousDataLength = 0;
 int frameNo = 0;
 
 // Define variables to store BME280 readings to be sent
@@ -152,148 +151,151 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 // Callback when data is received (DMX)
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data)
 {
-  printf("onDmxFrame #%u uni%u l%u seq%u\n", frameNo, universe, length, sequence);
+  printf("onDmxFrame #%u\tuniverse: %u | length: %u | sequence: %u | data: %u\n", frameNo, universe, length, sequence, &data);
 
   // sendFrame = 1;
 
-  // // set brightness of the whole strip
-  // if (universe == 15)
-  // {
-  //   FastLED.setBrightness(data[0]);
-  // }
+  // set brightness of the whole strip
+  if (universe == 15)
+  {
+    FastLED.setBrightness(data[0]);
+  }
 
+  // read universe and put into the right part of the display buffer
+  // using length/3 because 3 values define r/g/b of one pixel
+  for (int i = 0; i < length / 3; i++)
+  {
+    int ledNum = i + (universe - startUniverse) * (previousDataLength / 3);
 
-  // // read universe and put into the right part of the display buffer
-  // // using length/3 because 3 values define r/g/b of one pixel
-  // for (int i = 0; i < length / 3; i++)
-  // {
-  //   int led = i + (universe - startUniverse) * (previousDataLength / 3);
+    if (ledNum < numPx)
+    {
+      setLedValues(ledNum, i, data);
+    }
 
-  //   //   if (led < numPx)
-  //   //   {
-  //   //     int16_t thisCount = 0;
-  //   //     const int16_t *thisRegion;
+    artnetData.ledNum = ledNum;
+    artnetData.colR = data[i * 3];
+    artnetData.colG = data[i * 3 + 1];
+    artnetData.colB = data[i * 3 + 2];
+    // Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+  }
+  // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
 
-  //   //     switch (led)
-  //   //     {
-  //   //       // row 1
-  //   //       case 10:
-  //   //           thisCount = len_p11_1;
-  //   //           thisRegion = p11_1;
-  //   //           break;
-  //   //       case 11:
-  //   //           thisCount = len_p12_1;
-  //   //           thisRegion = p12_1;
-  //   //           break;
-  //   //       case 12:
-  //   //           thisCount = len_p13_1;
-  //   //           thisRegion = p13_1;
-  //   //           break;
-  //   //       case 13:
-  //   //           thisCount = len_p14_1;
-  //   //           thisRegion = p14_1;
-  //   //           break;
-  //   //       case 14:
-  //   //           thisCount = len_p15_1;
-  //   //           thisRegion = p15_1;
-  //   //           break;
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+  if (result == ESP_OK)
+  {
+    Serial.println("Sent with success");
+  }
+  else
+  {
+    Serial.println("Error sending the data");
+  }
 
-  //   //       // row 2
-  //   //       case 23:
-  //   //           thisCount = len_p14_2;
-  //   //           thisRegion = p14_2;
-  //   //           break;
-  //   //       case 24:
-  //   //           thisCount = len_p15_2;
-  //   //           thisRegion = p15_2;
-  //   //           break;
-  //   //       case 25:
-  //   //           thisCount = len_p16_2;
-  //   //           thisRegion = p16_2;
-  //   //           break;
+  previousDataLength = length;
+  FastLED.show();
+  frameNo++;
+}
 
-  //   //       // row 3
-  //   //       case 35:
-  //   //           thisCount = len_p16_3;
-  //   //           thisRegion = p16_3;
-  //   //           break;
-  //   //       case 36:
-  //   //           thisCount = len_p17_3;
-  //   //           thisRegion = p17_3;
-  //   //           break;
-  //   //       case 37:
-  //   //           thisCount = len_p18_3;
-  //   //           thisRegion = p18_3;
-  //   //           break;
+void setLedValues(int ledNum, int i, uint8_t *data)
+{
+  int16_t thisCount = 0;
+  const int16_t *thisRegion;
 
-  //   //       // row 4
-  //   //       case 46:
-  //   //           thisCount = len_p17_4;
-  //   //           thisRegion = p17_4;
-  //   //           break;
-  //   //       case 47:
-  //   //           thisCount = len_p18_4;
-  //   //           thisRegion = p18_4;
-  //   //           break;
-  //   //       case 48:
-  //   //           thisCount = len_p19_4;
-  //   //           thisRegion = p19_4;
-  //   //           break;
+  switch (ledNum)
+  {
+  // row 1
+  case 10:
+    thisCount = len_p11_1;
+    thisRegion = p11_1;
+    break;
+  case 11:
+    thisCount = len_p12_1;
+    thisRegion = p12_1;
+    break;
+  case 12:
+    thisCount = len_p13_1;
+    thisRegion = p13_1;
+    break;
+  case 13:
+    thisCount = len_p14_1;
+    thisRegion = p14_1;
+    break;
+  case 14:
+    thisCount = len_p15_1;
+    thisRegion = p15_1;
+    break;
 
-  //   //       // row 5
-  //   //       case 58:
-  //   //           thisCount = len_p19_5;
-  //   //           thisRegion = p19_5;
-  //   //           break;
-  //   //       case 59:
-  //   //           thisCount = len_p20_5;
-  //   //           thisRegion = p20_5;
-  //   //           break;
-  //   //       case 60:
-  //   //           thisCount = len_p21_5;
-  //   //           thisRegion = p21_5;
-  //   //           break;
+  // row 2
+  case 23:
+    thisCount = len_p14_2;
+    thisRegion = p14_2;
+    break;
+  case 24:
+    thisCount = len_p15_2;
+    thisRegion = p15_2;
+    break;
+  case 25:
+    thisCount = len_p16_2;
+    thisRegion = p16_2;
+    break;
 
-  //   //       // row 6
-  //   //       case 69:
-  //   //           thisCount = len_p20_6;
-  //   //           thisRegion = p20_6;
-  //   //           break;
-  //   //       case 70:
-  //   //           thisCount = len_p21_6;
-  //   //           thisRegion = p21_6;
-  //   //           break;
-  //   //     }
+  // row 3
+  case 35:
+    thisCount = len_p16_3;
+    thisRegion = p16_3;
+    break;
+  case 36:
+    thisCount = len_p17_3;
+    thisRegion = p17_3;
+    break;
+  case 37:
+    thisCount = len_p18_3;
+    thisRegion = p18_3;
+    break;
 
-  //   //     for(int l=0; l<thisCount; l++) {
-  //   //       leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
-  //   //     }
-  //   //   }
+  // row 4
+  case 46:
+    thisCount = len_p17_4;
+    thisRegion = p17_4;
+    break;
+  case 47:
+    thisCount = len_p18_4;
+    thisRegion = p18_4;
+    break;
+  case 48:
+    thisCount = len_p19_4;
+    thisRegion = p19_4;
+    break;
 
-  //   // generateDummyData();
-  //   artnetData.ledNum = ledNum;
-  //   artnetData.colR = data[i * 3];
-  //   artnetData.colG = data[i * 3 + 1];
-  //   artnetData.colB = data[i * 3 + 2];
-  //   Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
-  //   // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
+  // row 5
+  case 58:
+    thisCount = len_p19_5;
+    thisRegion = p19_5;
+    break;
+  case 59:
+    thisCount = len_p20_5;
+    thisRegion = p20_5;
+    break;
+  case 60:
+    thisCount = len_p21_5;
+    thisRegion = p21_5;
+    break;
 
-  //   // Send message via ESP-NOW
-  //   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+  // row 6
+  case 69:
+    thisCount = len_p20_6;
+    thisRegion = p20_6;
+    break;
+  case 70:
+    thisCount = len_p21_6;
+    thisRegion = p21_6;
+    break;
+  }
 
-  //   if (result == ESP_OK)
-  //   {
-  //     Serial.println("Sent with success");
-  //   }
-  //   else
-  //   {
-  //     Serial.println("Error sending the data");
-  //   }
-  // }
-
-  // previousDataLength = length;
-  // FastLED.show();
-  // frameNo ++;
+  for (int l = 0; l < thisCount; l++)
+  {
+    leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+  }
 }
 
 void setup()
