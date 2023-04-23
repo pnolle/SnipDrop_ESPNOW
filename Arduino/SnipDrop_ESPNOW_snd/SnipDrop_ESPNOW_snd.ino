@@ -57,6 +57,17 @@ uint8_t colR;
 uint8_t colG;
 uint8_t colB;
 
+
+
+
+// => WEITER: ASSERT FAILED
+
+
+
+
+
+
+
 // // Define variables to store incoming readings
 // uint16_t incomingLedNum;
 // uint8_t incomingColR;
@@ -76,6 +87,8 @@ typedef struct struct_message
   uint8_t colB;
 } struct_message;
 
+// Create a struct_message for dummy data
+struct_message DummyData;
 // Create a struct_message for Artnet data
 struct_message artnetData;
 // Create a struct_message to hold incoming data
@@ -205,16 +218,16 @@ void setup()
   Serial.begin(115200);
   Serial.println("### SnipDrop - sender ###");
   
-  connectWifi();
+  // connectWifi();
 
   // // init LEDs
   // FastLED.addLeds<WS2813, DATA_PIN, GRB>(leds, NUM_LEDS);
   // // FastLED.setBrightness(100);
   // FastLED.setBrightness(255);
 
-  // onDmxFrame will execute every time a packet is received by the ESP32
-  artnet.begin();
-  artnet.setArtDmxCallback(onDmxFrame);
+  // // onDmxFrame will execute every time a packet is received by the ESP32
+  // artnet.begin();
+  // artnet.setArtDmxCallback(onDmxFrame);
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK)
@@ -222,28 +235,57 @@ void setup()
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  // register for sending CB to get the status of transmitted packet
-  esp_now_register_send_cb(onDataSent);
+  // // register for sending CB to get the status of transmitted packet
+  // esp_now_register_send_cb(onDataSent);
 
-  // Register peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false;
+  // // Register peer
+  // memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  // peerInfo.channel = 0;
+  // peerInfo.encrypt = false;
 
-  // Add peer
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
-    Serial.println("Failed to add peer");
-    return;
-  }
-  else {
-    Serial.printf("Peer added %u\n", broadcastAddress);
-  }
+  // // Add peer
+  // if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  // {
+  //   Serial.println("Failed to add peer");
+  //   return;
+  // }
+  // else {
+  //   Serial.printf("Peer added %u\n", broadcastAddress);
+  // }
+
+  
   // // Register for a callback function that will be called when data is received
   // esp_now_register_recv_cb(onDataRecv);
 }
 
 void loop()
 {
-  artnet.read();
+  Serial.println("loop");
+  // artnet.read();
+
+  generateDummyData();
+  DummyData.ledNum = ledNum;
+  DummyData.colR = colR;
+  DummyData.colG = colG;
+  DummyData.colB = colB;
+
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &DummyData, sizeof(DummyData));
+   
+  if (result == ESP_OK) {
+    Serial.println("Sent with success");
+  }
+  else {
+    Serial.println("Error sending the data");
+  }
+  delay(3000);
+}
+
+
+void generateDummyData(){
+  ledNum = random(500);
+  colR = random(255);
+  colG = random(255);
+  colB = random(255);
+  Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, colR, colG, colB);
 }

@@ -305,5 +305,4 @@ void setup()
 
 void loop()
 {
-  artnet.read();
 }
