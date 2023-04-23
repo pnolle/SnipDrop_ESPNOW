@@ -97,13 +97,13 @@ void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 // Callback when data is received (ESP_NOW)
 void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-  // memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
   Serial.printf("Bytes received:\t[%i]\n", len);
-  // incomingLedNum = incomingReadings.ledNum;
-  // incomingColR = incomingReadings.colR;
-  // incomingColG = incomingReadings.colG;
-  // incomingColB = incomingReadings.colB;
-  // Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
+  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+  incomingLedNum = incomingReadings.ledNum;
+  incomingColR = incomingReadings.colR;
+  incomingColG = incomingReadings.colG;
+  incomingColB = incomingReadings.colB;
+  Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
 
   // TODO: think of something if we want this option. only data is sent to this ESP, universe-independent at the moment
   // // set brightness of the whole strip
@@ -127,36 +127,16 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
     if (pxNum < pxTotal)
     {
-      setLedValues(pxNum, dataNo, incomingData);
+      setLedRegions(pxNum, dataNo, incomingData);
     }
-
-    // TODO: need artnetData for each ledNum per frame + send it
-    // artnetData.ledNum = ledNum;
-    // artnetData.colR = data[i * 3];
-    // artnetData.colG = data[i * 3 + 1];
-    // artnetData.colB = data[i * 3 + 2];
-
-    // Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
   }
-  // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
-
-  // // Send message via ESP-NOW
-  // esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
-  // if (result == ESP_OK)
-  // {
-  //   Serial.println("Sent with success");
-  // }
-  // else
-  // {
-  //   Serial.println("Error sending the data");
-  // }
 
   // previousDataLength = length;
   FastLED.show();
   frameNo++;
 }
 
-void setLedValues(int pxNum, int dataNo, const uint8_t *data)
+void setLedRegions(int pxNum, int dataNo, const uint8_t *data)
 {
   int16_t thisCount = 0;
   const int16_t *thisRegion;
@@ -253,11 +233,16 @@ void setLedValues(int pxNum, int dataNo, const uint8_t *data)
     thisRegion = p21_6;
     break;
   }
+  setLedValues(thisCount, thisRegion, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
+}
 
+
+void setLedValues(int16_t thisCount, const int16_t *thisRegion, uint8_t r, uint8_t g, uint8_t b)
+{
   // printf("setting %i LedValues #%i \tpxNum: %i | dataNo: %u\n", thisCount, dataNo, pxNum);
   for (int l = 0; l < thisCount; l++)
   {
-    leds[thisRegion[l]] = CRGB(data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
+    leds[thisRegion[l]] = CRGB(r, g, b);
     // if (l==0) printf("led %i of region %i \tr: %i | g: %i | b: %i\n", l, pxNum, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
   }
 }
