@@ -160,14 +160,14 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
 
   // read universe and put into the right part of the display buffer
   // using length/3 because 3 values define r/g/b of one pixel
-  for (int i = 0; i < length / 3; i++)
+  for (int dataNo = 0; dataNo < length / 3; dataNo++)
   {
-    uint16_t pxNum = i + (universe - startUniverse) * (previousDataLength / 3);
-    Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", i, universe, startUniverse, previousDataLength, pxNum, pxTotal);
+    int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
+    Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
     if (pxNum < pxTotal)
     {
-      setLedValues(pxNum, i, data);
+      setLedValues(pxNum, dataNo, data);
     }
 
     // TODO: need artnetData for each ledNum per frame + send it
@@ -196,10 +196,12 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   frameNo++;
 }
 
-void setLedValues(uint16_t pxNum, uint16_t dataNo, uint8_t *data)
+void setLedValues(int pxNum, int dataNo, uint8_t *data)
 {
   int16_t thisCount = 0;
   const int16_t *thisRegion;
+
+  printf("setLedValues #%i \tpxNum: %i | dataNo: %u\n", dataNo, pxNum);
 
   switch (pxNum)
   {
@@ -292,11 +294,12 @@ void setLedValues(uint16_t pxNum, uint16_t dataNo, uint8_t *data)
     break;
   }
 
+  printf("setting %i LedValues #%i \tpxNum: %i | dataNo: %u\n", thisCount, dataNo, pxNum);
   for (int l = 0; l < thisCount; l++)
   {
     leds[thisRegion[l]] = CRGB(data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
+    if (l==0) printf("led %i of region %i \tr: %i | g: %i | b: %i\n", l, pxNum, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
   }
-  printf("setLedValues #%i \tdataNo: %u | pxNum: %i | ledThisRegion: %i\n", dataNo, pxNum, leds[thisRegion[0]]);
 }
 
 void setup()
