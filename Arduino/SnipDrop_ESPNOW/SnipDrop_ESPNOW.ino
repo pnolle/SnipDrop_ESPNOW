@@ -163,7 +163,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   for (int dataNo = 0; dataNo < length / 3; dataNo++)
   {
     int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
-    Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
+    //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
     if (pxNum < pxTotal)
     {
@@ -201,7 +201,7 @@ void setLedValues(int pxNum, int dataNo, uint8_t *data)
   int16_t thisCount = 0;
   const int16_t *thisRegion;
 
-  printf("setLedValues #%i \tpxNum: %i | dataNo: %u\n", dataNo, pxNum);
+  // printf("setLedValues #%i \tpxNum: %i | dataNo: %u\n", dataNo, pxNum);
 
   switch (pxNum)
   {
@@ -294,11 +294,11 @@ void setLedValues(int pxNum, int dataNo, uint8_t *data)
     break;
   }
 
-  printf("setting %i LedValues #%i \tpxNum: %i | dataNo: %u\n", thisCount, dataNo, pxNum);
+  // printf("setting %i LedValues #%i \tpxNum: %i | dataNo: %u\n", thisCount, dataNo, pxNum);
   for (int l = 0; l < thisCount; l++)
   {
     leds[thisRegion[l]] = CRGB(data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
-    if (l==0) printf("led %i of region %i \tr: %i | g: %i | b: %i\n", l, pxNum, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
+    // if (l==0) printf("led %i of region %i \tr: %i | g: %i | b: %i\n", l, pxNum, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
   }
 }
 
