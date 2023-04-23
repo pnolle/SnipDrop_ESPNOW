@@ -42,7 +42,8 @@
 // REPLACE WITH THE MAC Address of your receiver
 // uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 // uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC};  // AP
-uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
+// uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
+uint8_t broadcastAddress[] = {0x34, 0x86, 0x5D, 0xFC, 0x80, 0xB4}; // REC
 
 // Artnet
 ArtnetWifi artnet;
@@ -90,11 +91,10 @@ boolean connectWifi(void)
 
   WiFi.begin(ssid, password);
   WiFi.mode(WIFI_STA); // Wi-Fi Station
-  Serial.println("### ARTNET ESP32 ###");
-  Serial.println("Connecting to WiFi");
+  Serial.println(WiFi.macAddress());
 
   // Wait for connection
-  Serial.print("Connecting");
+  Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -200,115 +200,11 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   // frameNo++;
 }
 
-void setLedValues(int pxNum, int dataNo, uint8_t *data)
-{
-  int16_t thisCount = 0;
-  const int16_t *thisRegion;
-
-  // printf("setLedValues #%i \tpxNum: %i | dataNo: %u\n", dataNo, pxNum);
-
-  switch (pxNum)
-  {
-  // row 1
-  case 10:
-    thisCount = len_p11_1;
-    thisRegion = p11_1;
-    break;
-  case 11:
-    thisCount = len_p12_1;
-    thisRegion = p12_1;
-    break;
-  case 12:
-    thisCount = len_p13_1;
-    thisRegion = p13_1;
-    break;
-  case 13:
-    thisCount = len_p14_1;
-    thisRegion = p14_1;
-    break;
-  case 14:
-    thisCount = len_p15_1;
-    thisRegion = p15_1;
-    break;
-
-  // row 2
-  case 23:
-    thisCount = len_p14_2;
-    thisRegion = p14_2;
-    break;
-  case 24:
-    thisCount = len_p15_2;
-    thisRegion = p15_2;
-    break;
-  case 25:
-    thisCount = len_p16_2;
-    thisRegion = p16_2;
-    break;
-
-  // row 3
-  case 35:
-    thisCount = len_p16_3;
-    thisRegion = p16_3;
-    break;
-  case 36:
-    thisCount = len_p17_3;
-    thisRegion = p17_3;
-    break;
-  case 37:
-    thisCount = len_p18_3;
-    thisRegion = p18_3;
-    break;
-
-  // row 4
-  case 46:
-    thisCount = len_p17_4;
-    thisRegion = p17_4;
-    break;
-  case 47:
-    thisCount = len_p18_4;
-    thisRegion = p18_4;
-    break;
-  case 48:
-    thisCount = len_p19_4;
-    thisRegion = p19_4;
-    break;
-
-  // row 5
-  case 58:
-    thisCount = len_p19_5;
-    thisRegion = p19_5;
-    break;
-  case 59:
-    thisCount = len_p20_5;
-    thisRegion = p20_5;
-    break;
-  case 60:
-    thisCount = len_p21_5;
-    thisRegion = p21_5;
-    break;
-
-  // row 6
-  case 69:
-    thisCount = len_p20_6;
-    thisRegion = p20_6;
-    break;
-  case 70:
-    thisCount = len_p21_6;
-    thisRegion = p21_6;
-    break;
-  }
-
-  // printf("setting %i LedValues #%i \tpxNum: %i | dataNo: %u\n", thisCount, dataNo, pxNum);
-  for (int l = 0; l < thisCount; l++)
-  {
-    leds[thisRegion[l]] = CRGB(data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
-    // if (l==0) printf("led %i of region %i \tr: %i | g: %i | b: %i\n", l, pxNum, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
-  }
-}
-
 void setup()
 {
   Serial.begin(115200);
+  Serial.println("### SnipDrop - sender ###");
+  
   connectWifi();
 
   // // init LEDs
@@ -339,6 +235,9 @@ void setup()
   {
     Serial.println("Failed to add peer");
     return;
+  }
+  else {
+    Serial.printf("Peer added %u\n", broadcastAddress);
   }
   // // Register for a callback function that will be called when data is received
   // esp_now_register_recv_cb(onDataRecv);

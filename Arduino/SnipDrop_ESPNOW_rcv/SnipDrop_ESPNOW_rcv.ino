@@ -17,7 +17,6 @@
 // #include <ArtnetWifi.h>
 #include "Arrow.h"
 #include "dummypixels.h"
-#include "secrets.h" // local variables
 
 // How many leds in your strip?
 #define NUM_LEDS 452 // 452 LEDs in Arrow
@@ -38,11 +37,11 @@ CRGB leds[NUM_LEDS];
 
 // REPLACE WITH THE MAC Address of your receiver
 // uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC};  // AP
+uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC}; // AP
 // uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
 
 // Artnet
-//ArtnetWifi artnet;
+// ArtnetWifi artnet;
 const int startUniverse = 0;
 uint16_t previousDataLength = 0;
 int frameNo = 0;
@@ -72,55 +71,12 @@ typedef struct struct_message
   uint8_t colB;
 } struct_message;
 
-// Create a struct_message for dummy data
-struct_message DummyData;
 // Create a struct_message for Artnet data
-struct_message artnetData;
+// struct_message artnetData;
 // Create a struct_message to hold incoming data
 struct_message incomingReadings;
 
 esp_now_peer_info_t peerInfo;
-
-// connect to wifi – returns true if successful or false if not
-boolean connectWifi(void)
-{
-  boolean state = true;
-  int i = 0;
-
-  WiFi.begin(ssid, password);
-  WiFi.mode(WIFI_STA); // Wi-Fi Station
-  Serial.println("### SnipDrop - receiver ###");
-  Serial.println("Connecting to WiFi");
-
-  // Wait for connection
-  Serial.print("Connecting");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    if (i > 20)
-    {
-      state = false;
-      break;
-    }
-    i++;
-  }
-  if (state)
-  {
-    Serial.println("");
-    Serial.print("Connected to ");
-    Serial.println(ssid);
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-  }
-  else
-  {
-    Serial.println("");
-    Serial.println("Connection failed.");
-  }
-
-  return state;
-}
 
 // TODO: send connection confirmations to ESPNOW AP?
 // Callback when data is sent (ESP_NOW)
@@ -167,7 +123,7 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     // TODO: Without universe, assuming that the shift to the correct LED numbers has already happened on the client side. One ESP is talking to one part of the backdrop, after all.
     int pxNum = dataNo * (previousDataLength / 3);
     // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
-    //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
+    // Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
     if (pxNum < pxTotal)
     {
@@ -309,7 +265,11 @@ void setLedValues(int pxNum, int dataNo, const uint8_t *data)
 void setup()
 {
   Serial.begin(115200);
-  connectWifi();
+  Serial.println("### SnipDrop - receiver ###");
+
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+  Serial.println(WiFi.macAddress());
 
   // init LEDs
   FastLED.addLeds<WS2813, DATA_PIN, GRB>(leds, NUM_LEDS);
@@ -322,8 +282,8 @@ void setup()
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  // // register for sending CB to get the status of transmitted packet
-  // esp_now_register_send_cb(onDataSent);
+  // register for sending CB to get the status of transmitted packet
+  esp_now_register_send_cb(onDataSent);
 
   // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
@@ -335,6 +295,9 @@ void setup()
   {
     Serial.println("Failed to add peer");
     return;
+  }
+  else {
+    Serial.printf("Peer added %u\n", broadcastAddress);
   }
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(onDataRecv);
