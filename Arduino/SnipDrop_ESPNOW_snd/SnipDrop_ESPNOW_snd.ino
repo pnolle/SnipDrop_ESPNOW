@@ -161,28 +161,28 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   // read universe and put into the right part of the display buffer
   // using length/3 because 3 values define r/g/b of one pixel
   // => so this is ONE PIXEL from Qlc+
-  for (int dataNo = 0; dataNo < length / 3; dataNo++)
-  {
-    // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
-    // //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
+  // for (int dataNo = 0; dataNo < length / 3; dataNo++)
+  // {
+  //   // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
+  //   // //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
-    // if (pxNum < pxTotal)
-    // {
-    //   setLedValues(pxNum, dataNo, data);
-    // }
+  //   // if (pxNum < pxTotal)
+  //   // {
+  //   //   setLedValues(pxNum, dataNo, data);
+  //   // }
 
-    TODO: need artnetData for each ledNum per frame + send it
-    artnetData.ledNum = ledNum;
-    artnetData.colR = data[i * 3];
-    artnetData.colG = data[i * 3 + 1];
-    artnetData.colB = data[i * 3 + 2];
+  //   TODO: need artnetData for each ledNum per frame + send it
+  //   artnetData.ledNum = ledNum;
+  //   artnetData.colR = data[i * 3];
+  //   artnetData.colG = data[i * 3 + 1];
+  //   artnetData.colB = data[i * 3 + 2];
 
-    Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
-  }
+  //   Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+  // }
   // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
 
   // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&data, sizeof(data));
   if (result == ESP_OK)
   {
     Serial.println("Sent with success");
