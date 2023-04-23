@@ -130,4 +130,4 @@ const int16_t p14_19[len_p14_19]={228,15,14,13,12};
 const int16_t len_p15_19=2;
 const int16_t p15_19[len_p15_19]={17,16};
 
-uint16_t numPx = 70;
+uint16_t pxTotal = 70;

@@ -42,7 +42,6 @@ uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
 // Artnet
 ArtnetWifi artnet;
 const int startUniverse = 0;
-bool sendFrame = 1;
 uint16_t previousDataLength = 0;
 int frameNo = 0;
 
@@ -151,9 +150,7 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 // Callback when data is received (DMX)
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data)
 {
-  printf("onDmxFrame #%u\tuniverse: %u | length: %u | sequence: %u | data: %u\n", frameNo, universe, length, sequence, &data);
-
-  // sendFrame = 1;
+  Serial.printf("onDmxFrame %u %u %u\n", universe, length, sequence);
 
   // set brightness of the whole strip
   if (universe == 15)
@@ -165,43 +162,46 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   // using length/3 because 3 values define r/g/b of one pixel
   for (int i = 0; i < length / 3; i++)
   {
-    int ledNum = i + (universe - startUniverse) * (previousDataLength / 3);
+    uint16_t pxNum = i + (universe - startUniverse) * (previousDataLength / 3);
+    Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", i, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
-    if (ledNum < numPx)
+    if (pxNum < pxTotal)
     {
-      setLedValues(ledNum, i, data);
+      setLedValues(pxNum, i, data);
     }
 
-    artnetData.ledNum = ledNum;
-    artnetData.colR = data[i * 3];
-    artnetData.colG = data[i * 3 + 1];
-    artnetData.colB = data[i * 3 + 2];
+    // TODO: need artnetData for each ledNum per frame + send it
+    // artnetData.ledNum = ledNum;
+    // artnetData.colR = data[i * 3];
+    // artnetData.colG = data[i * 3 + 1];
+    // artnetData.colB = data[i * 3 + 2];
+
     // Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
   }
   // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
 
-  // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
-  if (result == ESP_OK)
-  {
-    Serial.println("Sent with success");
-  }
-  else
-  {
-    Serial.println("Error sending the data");
-  }
+  // // Send message via ESP-NOW
+  // esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&artnetData, sizeof(artnetData));
+  // if (result == ESP_OK)
+  // {
+  //   Serial.println("Sent with success");
+  // }
+  // else
+  // {
+  //   Serial.println("Error sending the data");
+  // }
 
-  previousDataLength = length;
+  // previousDataLength = length;
   FastLED.show();
   frameNo++;
 }
 
-void setLedValues(int ledNum, int i, uint8_t *data)
+void setLedValues(uint16_t pxNum, uint16_t dataNo, uint8_t *data)
 {
   int16_t thisCount = 0;
   const int16_t *thisRegion;
 
-  switch (ledNum)
+  switch (pxNum)
   {
   // row 1
   case 10:
@@ -294,8 +294,9 @@ void setLedValues(int ledNum, int i, uint8_t *data)
 
   for (int l = 0; l < thisCount; l++)
   {
-    leds[thisRegion[l]] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+    leds[thisRegion[l]] = CRGB(data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
   }
+  printf("setLedValues #%i \tdataNo: %u | pxNum: %i | ledThisRegion: %i\n", dataNo, pxNum, leds[thisRegion[0]]);
 }
 
 void setup()
@@ -305,7 +306,8 @@ void setup()
 
   // init LEDs
   FastLED.addLeds<WS2813, DATA_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(100);
+  // FastLED.setBrightness(100);
+  FastLED.setBrightness(255);
 
   // onDmxFrame will execute every time a packet is received by the ESP32
   artnet.begin();
