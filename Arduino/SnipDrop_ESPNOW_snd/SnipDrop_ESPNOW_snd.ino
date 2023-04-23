@@ -14,7 +14,10 @@
 // #include <FastLED.h>
 #include <esp_now.h>
 #include <WiFi.h>
+
+// TODO: is there an ArtnetUSB?
 #include <ArtnetWifi.h>
+
 // #include "Arrow.h"
 // #include "dummypixels.h"
 #include "secrets.h" // local variables

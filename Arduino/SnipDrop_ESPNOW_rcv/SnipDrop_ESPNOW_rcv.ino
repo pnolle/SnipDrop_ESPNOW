@@ -1,10 +1,12 @@
 /*
-  ########
-  SnipDrop
-  ########
+  ###################
+  SnipDrop - receiver
+  ###################
 
   by Niklas Köhn
   http://snippetupperlaser.com
+
+  This is the firmware for the ESP32 receiving ESPNOW data from the sender ESP32 and putting it on the LEDs.
 
   ESP_NOW parts based on Rui Santos' work at https://RandomNerdTutorials.com/esp-now-two-way-communication-esp32/
 */
@@ -12,7 +14,7 @@
 #include <FastLED.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#include <ArtnetWifi.h>
+// #include <ArtnetWifi.h>
 #include "Arrow.h"
 #include "dummypixels.h"
 #include "secrets.h" // local variables
@@ -36,20 +38,20 @@ CRGB leds[NUM_LEDS];
 
 // REPLACE WITH THE MAC Address of your receiver
 // uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-// uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC};  // AP
-uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
+uint8_t broadcastAddress[] = {0x40, 0x22, 0xD8, 0x5F, 0xD7, 0xDC};  // AP
+// uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
 
 // Artnet
-ArtnetWifi artnet;
+//ArtnetWifi artnet;
 const int startUniverse = 0;
 uint16_t previousDataLength = 0;
 int frameNo = 0;
 
-// Define variables to store BME280 readings to be sent
-uint16_t ledNum;
-uint8_t colR;
-uint8_t colG;
-uint8_t colB;
+// // Define variables to store BME280 readings to be sent
+// uint16_t ledNum;
+// uint8_t colR;
+// uint8_t colG;
+// uint8_t colB;
 
 // Define variables to store incoming readings
 uint16_t incomingLedNum;
@@ -87,7 +89,7 @@ boolean connectWifi(void)
 
   WiFi.begin(ssid, password);
   WiFi.mode(WIFI_STA); // Wi-Fi Station
-  Serial.println("### ARTNET ESP32 ###");
+  Serial.println("### SnipDrop - receiver ###");
   Serial.println("Connecting to WiFi");
 
   // Wait for connection
@@ -120,6 +122,7 @@ boolean connectWifi(void)
   return state;
 }
 
+// TODO: send connection confirmations to ESPNOW AP?
 // Callback when data is sent (ESP_NOW)
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
@@ -138,36 +141,37 @@ void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 // Callback when data is received (ESP_NOW)
 void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+  // memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
   Serial.printf("Bytes received:\t[%i]\n", len);
-  incomingLedNum = incomingReadings.ledNum;
-  incomingColR = incomingReadings.colR;
-  incomingColG = incomingReadings.colG;
-  incomingColB = incomingReadings.colB;
-  Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
-}
+  // incomingLedNum = incomingReadings.ledNum;
+  // incomingColR = incomingReadings.colR;
+  // incomingColG = incomingReadings.colG;
+  // incomingColB = incomingReadings.colB;
+  // Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
 
-// Callback when data is received (DMX)
-void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data)
-{
-  Serial.printf("onDmxFrame %u %u %u\n", universe, length, sequence);
-
-  // set brightness of the whole strip
-  if (universe == 15)
-  {
-    FastLED.setBrightness(data[0]);
-  }
+  // TODO: think of something if we want this option. only data is sent to this ESP, universe-independent at the moment
+  // // set brightness of the whole strip
+  // if (universe == 15)
+  // {
+  //   FastLED.setBrightness(data[0]);
+  // }
 
   // read universe and put into the right part of the display buffer
   // using length/3 because 3 values define r/g/b of one pixel
+  // => so this is ONE PIXEL from Qlc+
+
+  // TODO: check if this is always the case.
+  int length = 512;
   for (int dataNo = 0; dataNo < length / 3; dataNo++)
   {
-    int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
+    // TODO: Without universe, assuming that the shift to the correct LED numbers has already happened on the client side. One ESP is talking to one part of the backdrop, after all.
+    int pxNum = dataNo * (previousDataLength / 3);
+    // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
     //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
     if (pxNum < pxTotal)
     {
-      setLedValues(pxNum, dataNo, data);
+      setLedValues(pxNum, dataNo, incomingData);
     }
 
     // TODO: need artnetData for each ledNum per frame + send it
@@ -196,7 +200,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   frameNo++;
 }
 
-void setLedValues(int pxNum, int dataNo, uint8_t *data)
+void setLedValues(int pxNum, int dataNo, const uint8_t *data)
 {
   int16_t thisCount = 0;
   const int16_t *thisRegion;
@@ -312,18 +316,14 @@ void setup()
   // FastLED.setBrightness(100);
   FastLED.setBrightness(255);
 
-  // onDmxFrame will execute every time a packet is received by the ESP32
-  artnet.begin();
-  artnet.setArtDmxCallback(onDmxFrame);
-
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK)
   {
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  // register for sending CB to get the status of transmitted packet
-  esp_now_register_send_cb(onDataSent);
+  // // register for sending CB to get the status of transmitted packet
+  // esp_now_register_send_cb(onDataSent);
 
   // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
@@ -342,5 +342,4 @@ void setup()
 
 void loop()
 {
-  artnet.read();
 }
