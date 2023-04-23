@@ -16,11 +16,11 @@
 #include <WiFi.h>
 
 // TODO: is there an ArtnetUSB?
-#include <ArtnetWifi.h>
+// #include <ArtnetWifi.h>
 
 // #include "Arrow.h"
 // #include "dummypixels.h"
-#include "secrets.h" // local variables
+// #include "secrets.h" // local variables
 
 // // How many leds in your strip?
 // #define NUM_LEDS 452 // 452 LEDs in Arrow
@@ -45,11 +45,11 @@
 // uint8_t broadcastAddress[] = {0xC0, 0x49, 0xEF, 0xCF, 0xAD, 0xFC}; // C1
 uint8_t broadcastAddress[] = {0x34, 0x86, 0x5D, 0xFC, 0x80, 0xB4}; // REC
 
-// Artnet
-ArtnetWifi artnet;
-const int startUniverse = 0;
-uint16_t previousDataLength = 0;
-int frameNo = 0;
+// // Artnet
+// ArtnetWifi artnet;
+// const int startUniverse = 0;
+// uint16_t previousDataLength = 0;
+// int frameNo = 0;
 
 // Define variables to store BME280 readings to be sent
 uint16_t ledNum;
@@ -57,22 +57,11 @@ uint8_t colR;
 uint8_t colG;
 uint8_t colB;
 
-
-
-
-// => WEITER: ASSERT FAILED
-
-
-
-
-
-
-
-// // Define variables to store incoming readings
-// uint16_t incomingLedNum;
-// uint8_t incomingColR;
-// uint8_t incomingColG;
-// uint8_t incomingColB;
+// Define variables to store incoming readings
+uint16_t incomingLedNum;
+uint8_t incomingColR;
+uint8_t incomingColG;
+uint8_t incomingColB;
 
 // Variable to store if sending data was successful
 String success;
@@ -96,45 +85,45 @@ struct_message incomingReadings;
 
 esp_now_peer_info_t peerInfo;
 
-// connect to wifi – returns true if successful or false if not
-boolean connectWifi(void)
-{
-  boolean state = true;
-  int i = 0;
+// // connect to wifi – returns true if successful or false if not
+// boolean connectWifi(void)
+// {
+//   boolean state = true;
+//   int i = 0;
 
-  WiFi.begin(ssid, password);
-  WiFi.mode(WIFI_STA); // Wi-Fi Station
-  Serial.println(WiFi.macAddress());
+//   WiFi.begin(ssid, password);
+//   WiFi.mode(WIFI_STA); // Wi-Fi Station
+//   Serial.println(WiFi.macAddress());
 
-  // Wait for connection
-  Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-    if (i > 20)
-    {
-      state = false;
-      break;
-    }
-    i++;
-  }
-  if (state)
-  {
-    Serial.println("");
-    Serial.print("Connected to ");
-    Serial.println(ssid);
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-  }
-  else
-  {
-    Serial.println("");
-    Serial.println("Connection failed.");
-  }
+//   // Wait for connection
+//   Serial.print("Connecting to Wi-Fi");
+//   while (WiFi.status() != WL_CONNECTED)
+//   {
+//     delay(500);
+//     Serial.print(".");
+//     if (i > 20)
+//     {
+//       state = false;
+//       break;
+//     }
+//     i++;
+//   }
+//   if (state)
+//   {
+//     Serial.println("");
+//     Serial.print("Connected to ");
+//     Serial.println(ssid);
+//     Serial.print("IP address: ");
+//     Serial.println(WiFi.localIP());
+//   }
+//   else
+//   {
+//     Serial.println("");
+//     Serial.println("Connection failed.");
+//   }
 
-  return state;
-}
+//   return state;
+// }
 
 // Callback when data is sent (ESP_NOW)
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
@@ -151,73 +140,75 @@ void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
   }
 }
 
-// // Callback when data is received (ESP_NOW)
-// void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
-// {
-//   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
-//   Serial.printf("Bytes received:\t[%i]\n", len);
-//   incomingLedNum = incomingReadings.ledNum;
-//   incomingColR = incomingReadings.colR;
-//   incomingColG = incomingReadings.colG;
-//   incomingColB = incomingReadings.colB;
-//   Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
-// }
-
-// Callback when data is received (DMX)
-void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data)
+// Callback when data is received (ESP_NOW)
+void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-  Serial.printf("onDmxFrame %u %u %u\n", universe, length, sequence);
-
-  // // set brightness of the whole strip
-  // if (universe == 15)
-  // {
-  //   FastLED.setBrightness(data[0]);
-  // }
-
-  // read universe and put into the right part of the display buffer
-  // using length/3 because 3 values define r/g/b of one pixel
-  // => so this is ONE PIXEL from Qlc+
-  // for (int dataNo = 0; dataNo < length / 3; dataNo++)
-  // {
-  //   // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
-  //   // //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
-
-  //   // if (pxNum < pxTotal)
-  //   // {
-  //   //   setLedValues(pxNum, dataNo, data);
-  //   // }
-
-  //   TODO: need artnetData for each ledNum per frame + send it
-  //   artnetData.ledNum = ledNum;
-  //   artnetData.colR = data[i * 3];
-  //   artnetData.colG = data[i * 3 + 1];
-  //   artnetData.colB = data[i * 3 + 2];
-
-  //   Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
-  // }
-  // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
-
-  // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&data, sizeof(data));
-  if (result == ESP_OK)
-  {
-    Serial.println("Sent with success");
-  }
-  else
-  {
-    Serial.println("Error sending the data");
-  }
-
-  // previousDataLength = length;
-  // FastLED.show();
-  // frameNo++;
+  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+  Serial.printf("Bytes received:\t[%i]\n", len);
+  incomingLedNum = incomingReadings.ledNum;
+  incomingColR = incomingReadings.colR;
+  incomingColG = incomingReadings.colG;
+  incomingColB = incomingReadings.colB;
+  Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
 }
+
+// // Callback when data is received (DMX)
+// void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data)
+// {
+//   Serial.printf("onDmxFrame %u %u %u\n", universe, length, sequence);
+
+//   // // set brightness of the whole strip
+//   // if (universe == 15)
+//   // {
+//   //   FastLED.setBrightness(data[0]);
+//   // }
+
+//   // read universe and put into the right part of the display buffer
+//   // using length/3 because 3 values define r/g/b of one pixel
+//   // => so this is ONE PIXEL from Qlc+
+//   // for (int dataNo = 0; dataNo < length / 3; dataNo++)
+//   // {
+//   //   // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
+//   //   // //Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
+
+//   //   // if (pxNum < pxTotal)
+//   //   // {
+//   //   //   setLedValues(pxNum, dataNo, data);
+//   //   // }
+
+//   //   TODO: need artnetData for each ledNum per frame + send it
+//   //   artnetData.ledNum = ledNum;
+//   //   artnetData.colR = data[i * 3];
+//   //   artnetData.colG = data[i * 3 + 1];
+//   //   artnetData.colB = data[i * 3 + 2];
+
+//   //   Serial.printf("OUTGOING LedNum %u:\t [%u] | R:[%u] | G: [%u] | B: [%u]\n", ledNum, data, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+//   // }
+//   // Serial.printf("OUTGOING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", artnetData.ledNum, artnetData.colR, artnetData.colG, artnetData.colB);
+
+//   // Send message via ESP-NOW
+//   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&data, sizeof(data));
+//   if (result == ESP_OK)
+//   {
+//     Serial.println("Sent with success");
+//   }
+//   else
+//   {
+//     Serial.println("Error sending the data");
+//   }
+
+//   // previousDataLength = length;
+//   // FastLED.show();
+//   // frameNo++;
+// }
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("### SnipDrop - sender ###");
   
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
   // connectWifi();
 
   // // init LEDs
@@ -235,27 +226,26 @@ void setup()
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-  // // register for sending CB to get the status of transmitted packet
-  // esp_now_register_send_cb(onDataSent);
+  // register for sending CB to get the status of transmitted packet
+  esp_now_register_send_cb(onDataSent);
 
-  // // Register peer
-  // memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  // peerInfo.channel = 0;
-  // peerInfo.encrypt = false;
+  // Register peer
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
 
-  // // Add peer
-  // if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  // {
-  //   Serial.println("Failed to add peer");
-  //   return;
-  // }
-  // else {
-  //   Serial.printf("Peer added %u\n", broadcastAddress);
-  // }
-
+  // Add peer
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
+    Serial.println("Failed to add peer");
+    return;
+  }
+  else {
+    Serial.printf("Peer added %u\n", broadcastAddress);
+  }
   
-  // // Register for a callback function that will be called when data is received
-  // esp_now_register_recv_cb(onDataRecv);
+  // Register for a callback function that will be called when data is received
+  esp_now_register_recv_cb(onDataRecv);
 }
 
 void loop()
@@ -278,12 +268,12 @@ void loop()
   else {
     Serial.println("Error sending the data");
   }
-  delay(3000);
+  delay(1000);
 }
 
 
 void generateDummyData(){
-  ledNum = random(500);
+  ledNum = random(70);
   colR = random(255);
   colG = random(255);
   colB = random(255);
