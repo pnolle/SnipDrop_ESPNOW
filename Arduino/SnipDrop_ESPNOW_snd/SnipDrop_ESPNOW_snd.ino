@@ -268,12 +268,12 @@ void loop()
   else {
     Serial.println("Error sending the data");
   }
-  delay(1000);
+  delay(300);
 }
 
 
 void generateDummyData(){
-  ledNum = random(70);
+  ledNum = random(60)+10;
   colR = random(255);
   colG = random(255);
   colB = random(255);

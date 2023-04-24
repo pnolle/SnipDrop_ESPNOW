@@ -105,6 +105,8 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   incomingColB = incomingReadings.colB;
   Serial.printf("INCOMING LedNum:\t[%u] | R:[%u] | G: [%u] | B: [%u]\n", incomingLedNum, incomingColR, incomingColG, incomingColB);
 
+  setLedRegions(incomingLedNum, incomingColR, incomingColG, incomingColB);
+
   // TODO: think of something if we want this option. only data is sent to this ESP, universe-independent at the moment
   // // set brightness of the whole strip
   // if (universe == 15)
@@ -116,27 +118,28 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   // using length/3 because 3 values define r/g/b of one pixel
   // => so this is ONE PIXEL from Qlc+
 
-  // TODO: check if this is always the case.
-  int length = 512;
-  for (int dataNo = 0; dataNo < length / 3; dataNo++)
-  {
-    // TODO: Without universe, assuming that the shift to the correct LED numbers has already happened on the client side. One ESP is talking to one part of the backdrop, after all.
-    int pxNum = dataNo * (previousDataLength / 3);
-    // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
-    // Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
+  // // TODO: check if this is always the case.
+  // int length = 512;
+  // for (int dataNo = 0; dataNo < length / 3; dataNo++)
+  // {
+  //   // TODO: Without universe, assuming that the shift to the correct LED numbers has already happened on the client side. One ESP is talking to one part of the backdrop, after all.
+  //   int pxNum = dataNo * (previousDataLength / 3);
+  //   // int pxNum = dataNo + (universe - startUniverse) * (previousDataLength / 3);
+  //   // Serial.printf("%i + (%u - %u) * (%u / 3) = %i<%i\n", dataNo, universe, startUniverse, previousDataLength, pxNum, pxTotal);
 
-    if (pxNum < pxTotal)
-    {
-      setLedRegions(pxNum, dataNo, incomingData);
-    }
-  }
+  //   if (pxNum < pxTotal)
+  //   {
+  //     setLedRegions(pxNum, dataNo, incomingData);
+  //   }
+  // }
 
   // previousDataLength = length;
   FastLED.show();
   frameNo++;
 }
 
-void setLedRegions(int pxNum, int dataNo, const uint8_t *data)
+// void setLedRegions(int pxNum, int dataNo, const uint8_t *data)
+void setLedRegions(uint16_t pxNum, uint8_t incomingColR, uint8_t incomingColG, uint8_t incomingColB)
 {
   int16_t thisCount = 0;
   const int16_t *thisRegion;
@@ -233,7 +236,8 @@ void setLedRegions(int pxNum, int dataNo, const uint8_t *data)
     thisRegion = p21_6;
     break;
   }
-  setLedValues(thisCount, thisRegion, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
+  // setLedValues(thisCount, thisRegion, data[dataNo * 3], data[dataNo * 3 + 1], data[dataNo * 3 + 2]);
+  setLedValues(thisCount, thisRegion, incomingColR, incomingColG, incomingColB);
 }
 
 
