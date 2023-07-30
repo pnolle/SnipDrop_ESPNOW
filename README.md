@@ -1,5 +1,12 @@
-# SnipDrop
-This repo contains the ESP32 code for my LED rollup banner project 'SnipSign 2.0'. Is uses Expressif's ESPNOW standard to directly communicate between several ESP32s.
+# SnipDrop attempt with ESPNOW
+This repo contains ESP32 code developed for my LED rollup banner project 'SnipDrop' aka. 'SnipSign 2.0'. It uses Expressif's ESPNOW standard to directly communicate between several ESP32s. 
+
+## Reason for deprecation
+I ditched this attempt because I found ESPNOW tutorials on how to receive data from multiple senders, but I need to receive data from one sender with multiple receivers. It just seemed easier to go ahead with the 'classic' approach of setting up a Wi-Fi access point on one ESP32 and connecting two others two it and broadcasting the lighting information from Qlc+.
+=> This is the project I went live with: https://github.com/pnolle/SnipDrop_Esp32Wifi
+
+## Motivaton
+http://snippetupperlaser.com
 
 ## Sources
 Getting started with ESPNOW: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
